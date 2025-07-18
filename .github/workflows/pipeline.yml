@@ -11,13 +11,17 @@ on:
       - opened
       - synchronize
 jobs:
-  deploy:
+  avoid_reduncy:
     runs-on: ubuntu-latest
     steps:
       - name: cancel previous runs
         uses: styfle/cancel-workflow-action@0.9.1
         with:
           access_token: ${{github.token}}
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -28,12 +32,40 @@ jobs:
         run: npm ci
       - name: test
         run: npm run test
+
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: install dependencies
+        run: npm ci
       - name: e2e test
         uses: cypress-io/github-action@v6
         with:
-            command: npm run test:e2e
-            start: npm start
-            wait-on: http://localhost:3000/users
+          command: npm run test:e2e
+          start: npm start
+          wait-on: http://localhost:3000/users
+
+  deploy:
+    needs:
+      - test
+      - e2e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: install dependencies
+        run: npm ci
       - name: simulate Deploy
         if: ${{ github.event_name == 'push'}}
         run: echo "deployment simulate"
