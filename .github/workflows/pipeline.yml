@@ -18,3 +18,9 @@ jobs:
         run: npm install --no-audit --no-fund --no-optional
       - name: test
         run: npm run test
+      - name: e2e test
+        uses: cypress-io/github-action@v6
+        with:
+            command: npm run test:e2e
+            start: npm start
+            wait-on: http://localhost:3000
